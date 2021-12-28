@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: devops-it-mailu-admin-pv
+spec:
+  capacity:
+    storage: 50Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - nolock
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: ${nfs_path}
+    server: ${nfs_conn}
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: devops-it-mailu-clamav-pv
+spec:
+  capacity:
+    storage: 50Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - nolock
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: ${nfs_path}
+    server: ${nfs_conn}
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: devops-it-mailu-dovecot-pv
+spec:
+  capacity:
+    storage: 50Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - nolock
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: ${nfs_path}
+    server: ${nfs_conn}
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: devops-it-mailu-postfix-pv
+spec:
+  capacity:
+    storage: 50Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - nolock
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: ${nfs_path}
+    server: ${nfs_conn}
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: devops-it-mailu-redis-pv
+spec:
+  capacity:
+    storage: 50Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - nolock
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: ${nfs_path}
+    server: ${nfs_conn}
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: devops-it-mailu-roundcube-pv
+spec:
+  capacity:
+    storage: 50Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - nolock
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: ${nfs_path}
+    server: ${nfs_conn}
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: devops-it-mailu-rspamd-pv
+spec:
+  capacity:
+    storage: 50Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - nolock
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: ${nfs_path}
+    server: ${nfs_conn}

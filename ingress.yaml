@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devops-it-mailu-ingress
+  namespace: mailu
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+  labels:
+    app: devops-it-mailu
+    component: admin
+spec:
+  tls:
+  - secretName: devops-it-mailu-certificates
+    hosts:
+    - "mail.sanatorioallende.com.ar"
+    - "imap-sanatorioallende.com.ar"
+  rules:
+  - host: "mail.sanatorioallende.com.ar"
+    http:
+      paths:
+      - path: "/"
+        backend:
+          service:
+            name: devops-it-mailu-front
+            port: 
+              number: 80
+  - host: "imap-sanatorioallende.com.ar"
+    http:
+      paths:
+      - path: "/"
+        backend:
+          service:
+            name: devops-it-mailu-front
+            port: 
+              number: 80

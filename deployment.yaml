@@ -1,0 +1,779 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-it-mailu-admin
+  namespace: mailu
+spec:
+  selector:
+    matchLabels:
+      app: devops-it-mailu
+      component: admin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: devops-it-mailu
+        component: admin
+    spec:
+      containers:
+      - name: admin
+        image: mailu/admin:1.8
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: data
+            subPath: admin
+            mountPath: /data
+          - name: data
+            mountPath: /dkim
+            subPath: dkim
+        env:
+          - name: LOG_LEVEL
+            value: WARNING
+          - name: QUOTA_STORAGE_URL
+            value: redis://devops-it-mailu-redis/1
+          - name: RATELIMIT_STORAGE_URL
+            value: redis://devops-it-mailu-redis/2
+          - name: DOMAIN
+            value: "sanatorioallende.com.ar"
+          - name: HOSTNAMES
+            value: "mail.sanatorioallende.com.ar,imap-sanatorioallende.com.ar"
+          - name: IMAP_ADDRESS
+            value: devops-it-mailu-dovecot.default
+          - name: POP3_ADDRESS
+            value: devops-it-mailu-dovecot.default
+          - name: SMTP_ADDRESS
+            value: devops-it-mailu-postfix.default
+          - name: AUTHSMTP_ADDRESS
+            value: devops-it-mailu-postfix.default
+          - name: REDIS_ADDRESS
+            value: devops-it-mailu-redis
+          - name: WEBMAIL
+            value: none
+          - name: WEBMAIL_ADDRESS
+            value: localhost
+          - name: FRONT_ADDRESS
+            value: devops-it-mailu-front
+          - name: RECIPIENT_DELIMITER
+            value: +
+          #- name: SUBNET
+          #  value: 10.42.0.0/16
+          - name: PASSWORD_SCHEME
+            value: "PBKDF2"
+          - name: SECRET_KEY
+            value: "chang3m3!"
+          - name: AUTH_RATELIMIT
+            value: "10/minute;1000/hour"
+          - name: DB_FLAVOR
+            value: sqlite
+        ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 500m
+            memory: 500Mi
+        startupProbe:
+          httpGet:
+            path: /ui/login
+            port: http
+          periodSeconds:  10 
+          failureThreshold: 30 
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /ui/login
+            port: http
+          periodSeconds: 10
+          failureThreshold: 3
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /ui/login
+            port: http
+          periodSeconds: 10
+          failureThreshold: 1
+          timeoutSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: devops-it-mailu-admin-pvc
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-it-mailu-clamav
+  namespace: mailu
+spec:
+  selector:
+    matchLabels:
+      app: devops-it-mailu
+      component: clamav
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: devops-it-mailu
+        component: clamav
+    spec:
+      containers:
+      - name: clamav
+        image: mailu/clamav:1.8
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: data
+            subPath: clamav
+            mountPath: /data
+        env:
+          - name: LOG_LEVEL
+            value: WARNING
+        ports:
+          - name: clamav
+            containerPort: 3310
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+          requests:
+            cpu: 1000m
+            memory: 1Gi
+        startupProbe:
+          exec:
+            command:
+              - /health.sh
+          periodSeconds:  10 
+          failureThreshold: 60 
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+              - /health.sh
+          periodSeconds:  10 
+          failureThreshold: 3 
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - /health.sh
+          periodSeconds:  10 
+          failureThreshold: 1 
+          timeoutSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: devops-it-mailu-clamav-pvc
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-it-mailu-dovecot
+  namespace: mailu
+spec:
+  selector:
+    matchLabels:
+      app: devops-it-mailu
+      component: dovecot
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: devops-it-mailu
+        component: dovecot
+    spec:
+      containers:
+      - name: admin
+        image: mailu/dovecot:1.8
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: data
+            subPath: dovecotdata
+            mountPath: /data
+          - name: data
+            mountPath: /mail
+            subPath: dovecotmail
+        env:
+          - name: LOG_LEVEL
+            value: WARNING
+          - name: FRONT_ADDRESS
+            value: devops-it-mailu-front
+          - name: ADMIN_ADDRESS
+            value: devops-it-mailu-admin
+          - name: ANTISPAM_WEBUI_ADDRESS
+            value: devops-it-mailu-rspamd:11334
+          - name: POSTMASTER
+            value: postmaster
+          - name: DOMAIN
+            value: "sanatorioallende.com.ar"
+          - name: HOSTNAMES
+            value: "mail.sanatorioallende.com.ar,imap-sanatorioallende.com.ar"
+          - name: RECIPIENT_DELIMITER
+            value: +
+          - name: REDIS_ADDRESS
+            value: devops-it-mailu-redis
+          - name: WEBMAIL
+            value: none
+          - name: SECRET_KEY
+            value: "chang3m3!"
+        ports:
+          - name: auth
+            containerPort: 2102
+            protocol: TCP
+          - name: lmtp
+            containerPort: 2525
+            protocol: TCP
+          - name: imap
+            containerPort: 143
+            protocol: TCP
+          - name: pop3
+            containerPort: 110
+            protocol: TCP
+          - name: sieve
+            containerPort: 4190
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 500m
+            memory: 500Mi
+        startupProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - 'echo QUIT|nc localhost 110|grep "Dovecot ready."'
+          periodSeconds:  10 
+          failureThreshold: 30 
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - 'echo QUIT|nc localhost 110|grep "Dovecot ready."'
+          periodSeconds:  10 
+          failureThreshold: 3 
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - 'echo QUIT|nc localhost 110|grep "Dovecot ready."'
+          periodSeconds:  10 
+          failureThreshold: 1 
+          timeoutSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: devops-it-mailu-dovecot-pvc
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-it-mailu-front
+  namespace: mailu
+spec:
+  selector:
+    matchLabels:
+      app: devops-it-mailu
+      component: front
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  template:
+    metadata:
+      labels:
+        app: devops-it-mailu
+        component: front
+    spec:
+      containers:
+      - name: front
+        image: mailu/nginx:1.8
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: certs
+            mountPath: /certs
+        env:
+          - name: LOG_LEVEL
+            value: WARNING
+          - name: KUBERNETES_INGRESS
+            value: "true"
+          - name: TLS_FLAVOR
+            value: cert
+          - name: HOSTNAMES
+            value: "mail.sanatorioallende.com.ar,imap-sanatorioallende.com.ar"
+          - name: ADMIN_ADDRESS
+            value: devops-it-mailu-admin
+          - name: ANTISPAM_WEBUI_ADDRESS
+            value: devops-it-mailu-rspamd
+          - name: WEBMAIL
+            value: roundcube
+          - name: WEBMAIL_ADDRESS
+            value: devops-it-mailu-roundcube
+          - name: MESSAGE_SIZE_LIMIT
+            value: "52428800"
+          - name: WEB_WEBMAIL
+            value: "/"
+          - name: WEBDAV
+            value: none
+          - name: WEBDAV_ADDRESS
+            value: localhost
+          - name: ADMIN
+            value: "true"
+          - name: WEB_ADMIN
+            value: "/admin"
+          #- name: SUBNET
+          #  value: 10.42.0.0/16
+        ports:
+          - name: pop3
+            protocol: TCP
+            containerPort: 110
+            hostPort: 110
+          - name: pop3s
+            protocol: TCP
+            containerPort: 995
+            hostPort: 995
+          - name: imap
+            protocol: TCP
+            containerPort: 143
+            hostPort: 143
+          - name: imaps
+            protocol: TCP
+            containerPort: 993
+            hostPort: 993
+          - name: smtp
+            protocol: TCP
+            containerPort: 25
+            hostPort: 25
+          - name: smtps
+            protocol: TCP
+            containerPort: 465
+            hostPort: 465
+          - name: smtp-auth
+            protocol: TCP
+            containerPort: 10025
+          - name: imap-auth
+            protocol: TCP
+            containerPort: 10143
+          - name: smtpd
+            protocol: TCP
+            containerPort: 587
+            hostPort: 587
+          - name: auth
+            containerPort: 8000
+            protocol: TCP
+          - name: http
+            containerPort: 80
+            protocol: TCP          
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds:  10 
+          failureThreshold: 30 
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds:  10 
+          failureThreshold: 3 
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds:  10 
+          failureThreshold: 1 
+          timeoutSeconds: 5
+      volumes:
+        - name: certs
+          secret:
+            items:
+              - key: tls.crt
+                path: cert.pem
+              - key: tls.key
+                path: key.pem
+            secretName: devops-it-mailu-certificates
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 60
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-it-mailu-postfix
+  namespace: mailu
+spec:
+  selector:
+    matchLabels:
+      app: devops-it-mailu
+      component: postfix
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: devops-it-mailu
+        component: postfix
+    spec:
+      containers:
+      - name: postfix
+        image: mailu/postfix:1.8
+        imagePullPolicy: Always
+        volumeMounts:
+          - mountPath: /queue
+            name: data
+            subPath: mailqueue
+        env:
+          - name: LOG_LEVEL
+            value: WARNING
+          - name: REJECT_UNLISTED_RECIPIENT
+            value: "yes"
+          - name: DOMAIN
+            value: "sanatorioallende.com.ar"
+          - name: HOSTNAMES
+            value: "mail.sanatorioallende.com.ar,imap-sanatorioallende.com.ar"
+          - name: MESSAGE_SIZE_LIMIT
+            value: "52428800"
+          #- name: SUBNET
+          #  value: "10.42.0.0/16"
+          - name: RECIPIENT_DELIMITER
+            value: "+"
+          - name: LMTP_ADDRESS
+            value: devops-it-mailu-dovecot:2525
+          - name: ANTISPAM_MILTER_ADDRESS
+            value: devops-it-mailu-rspamd:11332
+          - name: ADMIN_ADDRESS
+            value: devops-it-mailu-admin
+          - name: FRONT_ADDRESS
+            value: devops-it-mailu-front
+          
+        ports:
+          - name: smtp
+            containerPort: 25
+            protocol: TCP
+          - name: smtp-ssl
+            containerPort: 465
+            protocol: TCP
+          - name: smtp-starttls
+            containerPort: 587
+            protocol: TCP
+          - name: smtp-auth
+            containerPort: 10025
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            memory: 2Gi
+        startupProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - 'echo QUIT|nc localhost 25|grep "220 .* ESMTP Postfix"'
+          periodSeconds:  10 
+          failureThreshold: 30 
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - 'echo QUIT|nc localhost 25|grep "220 .* ESMTP Postfix"'
+          periodSeconds:  10 
+          failureThreshold: 3 
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - 'echo QUIT|nc localhost 25|grep "220 .* ESMTP Postfix"'
+          periodSeconds:  10 
+          failureThreshold: 1 
+          timeoutSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: devops-it-mailu-postfix-pvc
+  strategy:
+    type: Recreate
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-it-mailu-redis
+  namespace: mailu
+spec:
+  selector:
+    matchLabels:
+      app: devops-it-mailu
+      component: redis
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: devops-it-mailu
+        component: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:5-alpine
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: data
+            subPath: redis
+            mountPath: /data
+        ports:
+          - containerPort: 6379
+            name: redis
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 300Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        startupProbe:
+          exec:
+            command:
+              - /usr/local/bin/redis-cli
+              - info
+              - status
+          periodSeconds:  10 
+          failureThreshold: 30 
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+              - /usr/local/bin/redis-cli
+              - info
+              - status
+          periodSeconds:  10 
+          failureThreshold: 3 
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - /usr/local/bin/redis-cli
+              - info
+              - status
+          periodSeconds:  10 
+          failureThreshold: 1 
+          timeoutSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: devops-it-mailu-redis-pvc
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-it-mailu-roundcube
+  namespace: mailu
+spec:
+  selector:
+    matchLabels:
+      app: devops-it-mailu
+      component: roundcube
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: devops-it-mailu
+        component: roundcube
+    spec:
+      containers:
+      - name: roundcube
+        image: mailu/roundcube:1.8
+        imagePullPolicy: Always
+        volumeMounts:
+          - mountPath: /data
+            name: data
+            subPath: roundcube
+        env:
+          - name: MESSAGE_SIZE_LIMIT
+            value: "52428800"
+          - name: IMAP_ADDRESS
+            value: RELEASE-NAME-mailu-dovecot
+          - name: FRONT_ADDRESS
+            value: RELEASE-NAME-mailu-front
+          - name: SECRET_KEY
+            value: "chang3m3!"
+        #  - name: SUBNET
+        #    value: 10.42.0.0/16
+          - name: ROUNDCUBE_DB_FLAVOR
+            value: sqlite
+        ports:
+          - name: http
+            containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        startupProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds:  10 
+          failureThreshold: 30 
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds:  10 
+          failureThreshold: 3 
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds:  10 
+          failureThreshold: 1 
+          timeoutSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: devops-it-mailu-roundcube-pvc
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-it-mailu-rspamd
+  namespace: mailu
+spec:
+  selector:
+    matchLabels:
+      app: devops-it-mailu
+      component: rspamd
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: devops-it-mailu
+        component: rspamd
+    spec:
+      hostname: rspamd
+      containers:
+      - name: rspamd
+        image: mailu/rspamd:1.8
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: data
+            subPath: rspamd
+            mountPath: /var/lib/rspamd
+          - name: data
+            subPath: dkim
+            mountPath: /dkim
+        env:
+          - name: LOG_LEVEL
+            value: WARNING
+          - name: FRONT_ADDRESS
+            value: devops-it-mailu-front
+          - name: REDIS_ADDRESS
+            value: devops-it-mailu-redis
+          - name: ANTIVIRUS
+            value: clamav
+          - name: ANTIVIRUS_ADDRESS
+            value: devops-it-mailu-clamav:3310
+        #  - name: SUBNET
+        #    value: "10.42.0.0/16"
+        ports:
+          - name: rspamd
+            containerPort: 11332
+            protocol: TCP
+          - name: rspamd-http
+            containerPort: 11334
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1024Mi
+          requests:
+            cpu: 500m
+            memory: 1024Mi
+        startupProbe:
+          httpGet:
+            path: /
+            port: rspamd-http
+          periodSeconds:  10 
+          failureThreshold: 90 
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: rspamd-http
+          periodSeconds:  10 
+          failureThreshold: 3 
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: rspamd-http
+          periodSeconds:  10 
+          failureThreshold: 1 
+          timeoutSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: devops-it-mailu-rspamd-pvc
+
+---

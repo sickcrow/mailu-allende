@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: devops-it-mailu-admin-pvc
+  namespace: mailu
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: ""
+  volumeMode: Filesystem
+  volumeName: devops-it-mailu-admin-pv
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 50Gi
+  phase: Bound
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: devops-it-mailu-clamav-pvc
+  namespace: mailu
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: ""
+  volumeMode: Filesystem
+  volumeName: devops-it-mailu-clamav-pv
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 50Gi
+  phase: Bound
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: devops-it-mailu-dovecot-pvc
+  namespace: mailu
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: ""
+  volumeMode: Filesystem
+  volumeName: devops-it-mailu-dovecot-pv
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 50Gi
+  phase: Bound
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: devops-it-mailu-postfix-pvc
+  namespace: mailu
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: ""
+  volumeMode: Filesystem
+  volumeName: devops-it-mailu-postfix-pv
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 50Gi
+  phase: Bound
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: devops-it-mailu-redis-pvc
+  namespace: mailu
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: ""
+  volumeMode: Filesystem
+  volumeName: devops-it-mailu-redis-pv
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 50Gi
+  phase: Bound
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: devops-it-mailu-roundcube-pvc
+  namespace: mailu
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: ""
+  volumeMode: Filesystem
+  volumeName: devops-it-mailu-roundcube-pv
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 50Gi
+  phase: Bound
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: devops-it-mailu-rspamd-pvc
+  namespace: mailu
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: ""
+  volumeMode: Filesystem
+  volumeName: devops-it-mailu-rspamd-pv
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 50Gi
+  phase: Bound
